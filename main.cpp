@@ -68,8 +68,8 @@ using tensorflow::int32;
 // Takes a file name, and loads a list of labels from it, one per line, and
 // returns a vector of the strings. It pads with empty strings so the length
 // of the result is a multiple of 16, because our model expects that.
-Status ReadLabelsFile(const string& file_name, std::vector<string>* result,
-                      size_t* found_label_count) {
+Status ReadLabelsFile(const string &file_name, std::vector<string> *result,
+                      size_t *found_label_count) {
     std::ifstream file(file_name);
     if (!file) {
         return tensorflow::errors::NotFound("Labels file ", file_name,
@@ -88,8 +88,8 @@ Status ReadLabelsFile(const string& file_name, std::vector<string>* result,
     return Status::OK();
 }
 
-static Status ReadEntireFile(tensorflow::Env* env, const string& filename,
-                             Tensor* output) {
+static Status ReadEntireFile(tensorflow::Env *env, const string &filename,
+                             Tensor *output) {
     tensorflow::uint64 file_size = 0;
     TF_RETURN_IF_ERROR(env->GetFileSize(filename, &file_size));
 
@@ -110,21 +110,21 @@ static Status ReadEntireFile(tensorflow::Env* env, const string& filename,
     return Status::OK();
 }
 
-bool EndsWith(const string &filename, const string extension){
+bool EndsWith(const string &filename, const string extension) {
     string fNameExt = "";
     size_t i = filename.rfind('.', filename.length());
     if (i != string::npos) {
-        fNameExt = filename.substr(i+1, filename.length() - i);
+        fNameExt = filename.substr(i + 1, filename.length() - i);
     }
     return (fNameExt == extension) ? true : false;
 }
 
 // Given an image file name, read in the data, try to decode it as an image,
 // resize it to the requested size, and then scale the values as desired.
-Status ReadTensorFromImageFile(const string& file_name, const int input_height,
+Status ReadTensorFromImageFile(const string &file_name, const int input_height,
                                const int input_width, const float input_mean,
                                const float input_std,
-                               std::vector<Tensor>* out_tensors) {
+                               std::vector<Tensor> *out_tensors) {
     auto root = tensorflow::Scope::NewRootScope();
     using namespace ::tensorflow::ops;  // NOLINT(build/namespaces)
 
@@ -192,8 +192,8 @@ Status ReadTensorFromImageFile(const string& file_name, const int input_height,
 
 // Reads a model graph definition from disk, and creates a session object you
 // can use to run it.
-Status LoadGraph(const string& graph_file_name,
-                 std::unique_ptr<tensorflow::Session>* session) {
+Status LoadGraph(const string &graph_file_name,
+                 std::unique_ptr<tensorflow::Session> *session) {
     tensorflow::GraphDef graph_def;
     Status load_graph_status =
             ReadBinaryProto(tensorflow::Env::Default(), graph_file_name, &graph_def);
@@ -211,8 +211,8 @@ Status LoadGraph(const string& graph_file_name,
 
 // Analyzes the output of the Inception graph to retrieve the highest scores and
 // their positions in the tensor, which correspond to categories.
-Status GetTopLabels(const std::vector<Tensor>& outputs, int how_many_labels,
-                    Tensor* indices, Tensor* scores) {
+Status GetTopLabels(const std::vector<Tensor> &outputs, int how_many_labels,
+                    Tensor *indices, Tensor *scores) {
     auto root = tensorflow::Scope::NewRootScope();
     using namespace ::tensorflow::ops;  // NOLINT(build/namespaces)
 
@@ -238,8 +238,8 @@ Status GetTopLabels(const std::vector<Tensor>& outputs, int how_many_labels,
 
 // Given the output of a model run, and the name of a file containing the labels
 // this prints out the top five highest-scoring values.
-Status PrintTopLabels(const std::vector<Tensor>& outputs,
-                      const string& labels_file_name) {
+Status PrintTopLabels(const std::vector<Tensor> &outputs,
+                      const string &labels_file_name) {
     std::vector<string> labels;
     size_t label_count;
     Status read_labels_status =
@@ -264,8 +264,8 @@ Status PrintTopLabels(const std::vector<Tensor>& outputs,
 
 // This is a testing function that returns whether the top label index is the
 // one that's expected.
-Status CheckTopLabel(const std::vector<Tensor>& outputs, int expected,
-                     bool* is_expected) {
+Status CheckTopLabel(const std::vector<Tensor> &outputs, int expected,
+                     bool *is_expected) {
     *is_expected = false;
     Tensor indices;
     Tensor scores;
@@ -282,16 +282,14 @@ Status CheckTopLabel(const std::vector<Tensor>& outputs, int expected,
     return Status::OK();
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     // These are the command-line flags the program can understand.
     // They define where the graph and input data is located, and what kind of
     // input the model expects. If you train your own model, or use something
     // other than inception_v3, then you'll need to update these.
-    string image = "/home/dpereira/Code/classification-module/data/tensorflow_example/grace_hopper.jpg";
-    string graph =
-            "/home/dpereira/Code/classification-module/data/tensorflow_example/inception_v3_2016_08_28_frozen.pb";
-    string labels =
-            "/home/dpereira/Code/classification-module/data/tensorflow_example/imagenet_slim_labels.txt";
+    string image = "../data/grace_hopper.jpg";
+    string graph = "../data/inception_v3_2016_08_28_frozen.pb";
+    string labels = "../data/imagenet_slim_labels.txt";
     int32 input_width = 299;
     int32 input_height = 299;
     float input_mean = 0;
@@ -349,7 +347,7 @@ int main(int argc, char* argv[]) {
         LOG(ERROR) << read_tensor_status;
         return -1;
     }
-    const Tensor& resized_tensor = resized_tensors[0];
+    const Tensor &resized_tensor = resized_tensors[0];
 
     // Actually run the image through the model.
     std::vector<Tensor> outputs;
