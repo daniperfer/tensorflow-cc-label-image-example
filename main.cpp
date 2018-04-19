@@ -110,13 +110,13 @@ static Status ReadEntireFile(tensorflow::Env *env, const string &filename,
     return Status::OK();
 }
 
-bool EndsWith(const string &filename, const string extension) {
-    string fNameExt = "";
+bool EndsWith(const string &filename, const string &extension) {
+    string fNameExt;
     size_t i = filename.rfind('.', filename.length());
     if (i != string::npos) {
         fNameExt = filename.substr(i + 1, filename.length() - i);
     }
-    return (fNameExt == extension) ? true : false;
+    return fNameExt == extension;
 }
 
 // Given an image file name, read in the data, try to decode it as an image,
@@ -162,6 +162,7 @@ Status ReadTensorFromImageFile(const string &file_name, const int input_height,
         image_reader = DecodeJpeg(root.WithOpName("jpeg_reader"), file_reader,
                                   DecodeJpeg::Channels(wanted_channels));
     }
+
     // Now cast the image data to float so we can do normal math on it.
     auto float_caster =
             Cast(root.WithOpName("float_caster"), image_reader, tensorflow::DT_FLOAT);
@@ -175,7 +176,7 @@ Status ReadTensorFromImageFile(const string &file_name, const int input_height,
             root, dims_expander,
             Const(root.WithOpName("size"), {input_height, input_width}));
     // Subtract the mean and divide by the scale.
-    Div(root.WithOpName(output_name), Sub(root, resized, {input_mean}),
+    auto output_tensor = Div(root.WithOpName(output_name), Sub(root, resized, {input_mean}),
         {input_std});
 
     // This runs the GraphDef network definition that we've just constructed, and
@@ -186,7 +187,9 @@ Status ReadTensorFromImageFile(const string &file_name, const int input_height,
     std::unique_ptr<tensorflow::Session> session(
             tensorflow::NewSession(tensorflow::SessionOptions()));
     TF_RETURN_IF_ERROR(session->Create(graph));
-    TF_RETURN_IF_ERROR(session->Run({inputs}, {output_name}, {}, out_tensors));
+    TF_RETURN_IF_ERROR(session->Run({inputs}, {output_name, "jpeg_reader"}, {}, out_tensors));
+    std::cout << "Image_reader: " << (*out_tensors)[1].DebugString() << "\n";
+    std::cout << "Input tensor: " << (*out_tensors)[0].DebugString() << "\n";
     return Status::OK();
 }
 
@@ -297,7 +300,7 @@ int main(int argc, char *argv[]) {
     string input_layer = "input";
     string output_layer = "InceptionV3/Predictions/Reshape_1";
     bool self_test = false;
-    string root_dir = "";
+    string root_dir;
     std::vector<Flag> flag_list = {
             Flag("image", &image, "image to be processed"),
             Flag("graph", &graph, "graph to be executed"),
